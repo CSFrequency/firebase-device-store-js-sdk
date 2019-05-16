@@ -1,0 +1,43 @@
+{
+  "name": "firebase-device-store",
+  "version": "0.3.0",
+  "description": "Automatically store Device and FCM token information for Firebase Auth users in Cloud Firestore.",
+  "scripts": {
+    "build": "npm run clean && rollup -c",
+    "clean": "rimraf ./dist",
+    "dev": "npm run clean && rollup -c -w",
+    "prepublish": "npm run build"
+  },
+  "main": "dist/index.node.cjs.js",
+  "browser": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/csfrequency/firebase-device-store-js-sdk.git"
+  },
+  "author": "CS Frequency Limited (https://csfrequency.com)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/csfrequency/firebase-device-store-js-sdk/issues"
+  },
+  "homepage": "https://github.com/csfrequency/firebase-device-store-js-sdk#readme",
+  "dependencies": {
+    "detect-browser": "^4.5.0"
+  },
+  "devDependencies": {
+    "firebase": "^5.9.4",
+    "prettier": "^1.17.0",
+    "rimraf": "^2.6.3",
+    "rollup": "^1.10.0",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-copy": "^1.1.0",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "rollup-plugin-typescript2": "^0.20.1",
+    "rollup-plugin-uglify": "^6.0.2",
+    "typescript": "^3.4.3"
+  },
+  "peerDependencies": {
+    "firebase": "^5.x.x"
+  },
+  "typings": "dist/index.d.ts"
+}
