@@ -53,7 +53,11 @@ The structure of this Document is as follows:
 
 ```
 {
-  devices: Device[],
+  devices: {
+    deviceId1: Device,
+    deviceId2: Device,
+    ...
+  },
   userId: string,
 }
 ```
@@ -62,11 +66,12 @@ A `Device` object contains the following:
 
 ```
 {
-  deviceId: string, // The browser name and version
+  deviceId: string, // A randomly generated ID
   fcmToken: string, // The FCM token
-  name: 'Unknown',  // Web browser's do not provide a name field
+  name: string,     // The browser name
   os: string,       // The OS of the device
-  type: 'Web'
+  type: 'Web',
+  userAgent: string // The browser user agent string
 }
 ```
 
@@ -87,7 +92,7 @@ Returns a `DeviceStore`.
 
 Indicate to the DeviceStore that the user is about to sign out, and the current device token should be removed.
 
-This cannot be done automatically with `onAuthStateChanged` as the user won't have permission to remove the token from Firestore as they are already signed out by this point and the Cloud Firestore security rules will prevent the database deletion.
+This can't be done automatically with `onAuthStateChanged` as the user is already signed out at this point. This means the Cloud Firestore security rules will prevent the database deletion as they no longer have the correct user permissions to remove the token.
 
 #### `DeviceStore.subscribe(): Promise<void>`
 

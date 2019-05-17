@@ -1,5 +1,6 @@
 import { detect } from 'detect-browser';
 import * as firebase from 'firebase';
+import nanoid from 'nanoid';
 
 type Device = {
   deviceId: string;
@@ -7,6 +8,14 @@ type Device = {
   name: string;
   os: string;
   type: 'Android' | 'iOS' | 'Web';
+  userAgent?: string;
+};
+
+type Devices = { [deviceId: string]: Device };
+
+type UserDevices = {
+  devices: Devices;
+  userId: string;
 };
 
 interface DeviceStore {
@@ -138,20 +147,19 @@ const addToken = (
     const doc = await transaction.get(docRef);
 
     if (doc.exists) {
-      const devices: Device[] = doc.data().devices || [];
-      // Add the new device if it doesn't already exist
-      if (!devices.find(device => device.fcmToken === token)) {
-        devices.push(createDevice(token));
-      }
+      const devices = getDevices(doc);
+
+      // Check if a device already matches the FCM token, or generate a new one
+      const deviceId = findDeviceId(devices, token) || generateDeviceId();
+      // Set the device information
+      devices[deviceId] = createDevice(deviceId, token);
       // Update the document
       return transaction.update(docRef, {
         devices,
       });
     } else {
-      return transaction.set(docRef, {
-        devices: [createDevice(token)],
-        userId,
-      });
+      const userDevices = createUserDevices(userId, token);
+      return transaction.set(docRef, userDevices);
     }
   });
 };
@@ -168,21 +176,21 @@ const deleteToken = (
     const doc = await transaction.get(docRef);
 
     if (doc.exists) {
-      const devices: Device[] = doc.data().devices || [];
-      // Remove the old device
-      const updatedDevices = devices.filter(
-        device => device.fcmToken !== token
-      );
-      // Update the document
-      return transaction.update(docRef, {
-        devices: updatedDevices,
-      });
-    } else {
-      return transaction.set(docRef, {
-        devices: [],
-        userId,
-      });
+      const devices = getDevices(doc);
+
+      // Find the device that matches the FCM token
+      const deviceId = findDeviceId(devices, token);
+
+      // If there is a matching device, remove it and update the document
+      if (deviceId) {
+        delete devices[deviceId];
+      }
+      return transaction.update(docRef, 'devices', devices);
     }
+
+    // Firestore requires that every document read in a transaction must also
+    // be written
+    return transaction.set(docRef, undefined);
   });
 };
 
@@ -199,45 +207,77 @@ const updateToken = (
     const doc = await transaction.get(docRef);
 
     if (doc.exists) {
-      const devices: Device[] = doc.data().devices || [];
-      let updatedDevices = devices;
-      // Remove the old device
+      const devices = getDevices(doc);
+      const updatedDevices: Devices = {
+        ...devices,
+      };
+
+      // If an old token is specified, find the device that matches the token
       if (oldToken) {
-        updatedDevices = devices.filter(device => device.fcmToken !== oldToken);
-      }
-      // Add the new device if it doesn't already exist
-      if (newToken) {
-        if (!updatedDevices.find(device => device.fcmToken === newToken)) {
-          updatedDevices.push(createDevice(newToken));
+        const deviceId = findDeviceId(devices, oldToken);
+        // If there is a matching device, then remove it
+        if (deviceId) {
+          delete updatedDevices[deviceId];
         }
       }
+
+      // If a new token is specified, then add the device
+      if (newToken) {
+        const deviceId = generateDeviceId();
+        updatedDevices[deviceId] = createDevice(deviceId, newToken);
+      }
+
       // Update the document
       return transaction.update(docRef, {
         devices: updatedDevices,
       });
-    } else if (newToken) {
-      return transaction.set(docRef, {
-        devices: [createDevice(newToken)],
-        userId,
-      });
     } else {
-      return transaction.set(docRef, {
-        devices: [],
-        userId,
-      });
+      const userDevices = createUserDevices(userId, newToken);
+      return transaction.set(docRef, userDevices);
     }
   });
 };
 
-const createDevice = (fcmToken: string): Device => {
+const createDevice = (deviceId: string, fcmToken: string): Device => {
   const browser = detect();
   return {
-    deviceId: window.navigator.userAgent,
+    deviceId,
     fcmToken,
     name: browser.name.charAt(0).toUpperCase() + browser.name.slice(1),
     os: browser.os,
     type: 'Web',
+    userAgent: window.navigator.userAgent,
   };
+};
+
+const createUserDevices = (
+  userId: string,
+  fcmToken: string | void
+): UserDevices => {
+  const deviceId = generateDeviceId();
+  return {
+    devices: fcmToken
+      ? {
+          [deviceId]: createDevice(deviceId, fcmToken),
+        }
+      : {},
+    userId,
+  };
+};
+
+const findDeviceId = (devices: Devices, token: string): string | void => {
+  return Object.keys(devices).find(deviceId => {
+    const device = devices[deviceId];
+    return device.fcmToken === token;
+  });
+};
+
+const generateDeviceId = (): string => {
+  return nanoid();
+};
+
+const getDevices = (doc: firebase.firestore.DocumentSnapshot): Devices => {
+  return doc.data().devices || {};
 };
 
 const userRef = (
