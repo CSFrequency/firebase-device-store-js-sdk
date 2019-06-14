@@ -98,9 +98,9 @@ This can't be done automatically with `onAuthStateChanged` as the user is alread
 
 Subscribe a device store to the Firebase App. This will:
 
-1. Request appropriate Firebase Messaging permissions, if they have not already been granted
+1. Request appropriate Firebase Cloud Messaging permissions, if they have not already been granted
 2. Subscribe to Firebase Auth and listen to changes in authentication state
-3. Subscribe to Firebase Messaging and listen to changes in the FCM token
+3. Subscribe to Firebase Cloud Messaging and listen to changes in the FCM token
 4. Automatically store device and FCM token information in the Cloud Firestore collection you specify
 
 #### `DeviceStore.unsubscribe(): void`
