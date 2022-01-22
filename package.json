@@ -23,7 +23,7 @@
   "homepage": "https://github.com/csfrequency/firebase-device-store-js-sdk#readme",
   "dependencies": {
     "detect-browser": "^4.5.0",
-    "nanoid": "^2.0.2"
+    "nanoid": "^3.1.31"
   },
   "devDependencies": {
     "@types/nanoid": "^2.0.0",
